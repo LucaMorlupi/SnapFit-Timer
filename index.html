@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Definisce il tipo di documento come HTML5 -->
+    <meta charset="UTF-8"> <!-- Specifica la codifica dei caratteri come UTF-8 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Rende il layout responsivo su dispositivi mobili -->
+    <title>SnapFit Timer</title> <!-- Titolo della pagina -->
+    <!-- Includi Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@700&display=swap" rel="stylesheet">
+    <!-- Inizia la sezione di stile CSS -->
+    <style>
+        /* Stile generale per il corpo della pagina */
+        body {
+            font-family: Arial, sans-serif; /* Font principale */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100vh;
+            margin: 0;
+            background-image: url('SfondoApp.jpg'); /* Immagine di sfondo */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        /* Stile per l'intestazione principale */
+        h1 {
+            margin-bottom: 20px;
+            font-family: 'Roboto Slab', serif;
+            font-size: 3em;
+            color: #000000;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Migliora la leggibilità */
+        }
+        /* Contenitore principale per il timer e i pulsanti */
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        /* Stile per il display del timer */
+        #timer {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #ffffff;
+            background-color: rgba(128, 128, 128, 0.95); /* Trasparenza a 0.95 */
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        /* Contenitore per i pulsanti */
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            background-color: #e0e0e0; /* Colore originale dei bottoni */
+            padding: 20px;
+            border-radius: 8px;
+        }
+        /* Stile per i pulsanti */
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background-color: #388E3C;
+            color: white;
+            transition: background-color 0.3s ease; /* Effetto di transizione sul colore di sfondo */
+        }
+        /* Stile per i pulsanti al passaggio del mouse */
+        button:hover {
+            background-color: #2E7D32;
+        }
+        /* Contenitore per la tabella dei tempi */
+        #laps {
+            margin-top: 20px;
+            width: 300px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        /* Stile per la tabella */
+        #laps table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        /* Stile per le celle della tabella */
+        #laps th, #laps td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenitore principale -->
+    <div id="container">
+        <h1>SnapFit Timer</h1> <!-- Titolo della pagina -->
+        <div id="timer">00:00:00.00</div> <!-- Display del timer -->
+        <!-- Contenitore per i pulsanti -->
+        <div class="button-container">
+            <button onclick="startTimer()">Start</button> <!-- Pulsante per avviare il timer -->
+            <button onclick="stopTimer()">Stop</button> <!-- Pulsante per fermare il timer -->
+            <button onclick="resetTimer()">Reset</button> <!-- Pulsante per resettare il timer -->
+            <button onclick="recordLap()">Lap</button> <!-- Pulsante per registrare un tempo parziale -->
+            <button onclick="exportCSV()">Export CSV</button> <!-- Pulsante per esportare i dati in un file CSV -->
+            <button onclick="exportOnlyLapTime()">Export Only Lap Time</button> <!-- Pulsante per esportare solo i tempi parziali in un file CSV -->
+        </div>
+    </div>
+
+    <!-- Contenitore per la tabella dei tempi -->
+    <div id="laps">
+        <table>
+            <thead>
+                <tr>
+                    <th>Lap</th> <!-- Colonna per il numero del giro -->
+                    <th>Lap Time [s]</th> <!-- Colonna per il tempo parziale in secondi -->
+                    <th>Total Time [s]</th> <!-- Colonna per il tempo totale in secondi -->
+                </tr>
+            </thead>
+            <tbody id="lapsTable"> <!-- Corpo della tabella che verrà riempito dinamicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Variabili globali
+        let startTime = 0; // Memorizza l'orario di inizio del timer
+        let elapsedTime = 0; // Memorizza il tempo trascorso
+        let timerInterval; // Memorizza l'intervallo del timer
+        let laps = []; // Array per memorizzare i tempi parziali
+        let lastLapTime = 0; // Memorizza il tempo dell'ultimo giro
+
+        // Funzione per avviare il timer
+        function startTimer() {
+            if (!timerInterval) { // Verifica se il timer non è già in esecuzione
+                startTime = Date.now() - elapsedTime; // Imposta l'ora di inizio tenendo conto del tempo già trascorso
+                timerInterval = setInterval(updateTimer, 10); // Aggiorna il timer ogni 10 millisecondi
+            }
+        }
+
+        // Funzione per fermare il timer
+        function stopTimer() {
+            clearInterval(timerInterval); // Ferma l'intervallo del timer
+            timerInterval = null; // Reimposta la variabile del timer
+        }
+
+        // Funzione per resettare il timer
+        function resetTimer() {
+            stopTimer(); // Ferma il timer
+            elapsedTime = 0; // Reimposta il tempo trascorso
+            lastLapTime = 0; // Reimposta il tempo dell'ultimo giro
+            document.getElementById("timer").textContent = "00:00:00.00"; // Resetta il display del timer
+            laps = []; // Svuota l'array dei tempi parziali
+            document.getElementById("lapsTable").innerHTML = ""; // Cancella la tabella dei tempi parziali
+        }
+
+        // Funzione per aggiornare il display del timer
+        function updateTimer() {
+            elapsedTime = Date.now() - startTime; // Calcola il tempo trascorso
+            const time = formatTime(elapsedTime); // Format the elapsed time
+            document.getElementById("timer").textContent = time; // Aggiorna il display del timer
+        }
+
+        // Funzione per registrare un tempo parziale
+        function recordLap() {
+            if (timerInterval) { // Verifica se il timer è in esecuzione
+                const currentLapTime = elapsedTime - lastLapTime; // Calcola il tempo del giro attuale
+                lastLapTime = elapsedTime; // Aggiorna il tempo dell'ultimo giro
+
+                // Calcolo del Lap Time e Total Time in formato mm:ss:SS
+                const lapTime = formatTime(currentLapTime); // Formatta il tempo del giro
+                const totalTime = formatTime(elapsedTime); // Formatta il tempo totale
+
+                // Aggiunge il tempo del giro all'array dei tempi parziali
+                laps.push({
+                    lapNumber: laps.length + 1, // Incrementa il numero del giro
+                    lapTime: lapTime, // Aggiunge il tempo del giro
+                    totalTime: totalTime // Aggiunge il tempo totale
+                });
+
+                // Aggiorna la tabella visiva
+                const row = document.createElement("tr"); // Crea una nuova riga nella tabella
+                const lapCell = document.createElement("td"); // Cella per il numero del giro
+                const lapTimeCell = document.createElement("td"); // Cella per il tempo del giro
+                const totalTimeCell = document.createElement("td"); // Cella per il tempo totale
+
+                lapCell.textContent = laps.length; // Imposta il numero del giro
+                lapTimeCell.textContent = lapTime; // Imposta il tempo del giro
+                totalTimeCell.textContent = totalTime; // Imposta il tempo totale
+
+                                row.appendChild(lapCell); // Aggiunge la cella del numero del giro alla riga
+                row.appendChild(lapTimeCell); // Aggiunge la cella del tempo del giro alla riga
+                row.appendChild(totalTimeCell); // Aggiunge la cella del tempo totale alla riga
+                document.getElementById("lapsTable").appendChild(row); // Aggiunge la riga alla tabella dei tempi parziali
+            }
+        }
+
+        // Funzione per esportare i dati in un file CSV
+        function exportCSV() {
+            let csvContent = "Lap,Time,Total Time\n"; // Intestazione del file CSV
+            laps.forEach((lap) => { // Itera su tutti i tempi parziali
+                csvContent += `${lap.lapNumber},${lap.lapTime},${lap.totalTime}\n`; // Aggiunge i dati di ogni giro al file CSV
+            });
+            const encodedUri = encodeURI(`data:text/csv;charset=utf-8,${csvContent}`); // Codifica il contenuto CSV in un URI
+            const link = document.createElement("a"); // Crea un elemento link per il download
+            link.setAttribute("href", encodedUri); // Imposta l'URI come destinazione del link
+            link.setAttribute("download", "snapfit_laps.csv"); // Specifica il nome del file da scaricare
+            document.body.appendChild(link); // Aggiunge il link al DOM
+            link.click(); // Simula un clic sul link per avviare il download
+        }
+
+        // Funzione per esportare solo i tempi parziali in formato "secondi,centesimi di secondo"
+        function exportOnlyLapTime() {
+            let csvContent = "Lap Time\n"; // Intestazione del file CSV
+            laps.forEach((lap) => {
+                // Converti il tempo lap nel formato secondi,centesimi di secondo
+                const timeParts = lap.lapTime.split(':'); // Divide il tempo nel formato mm:ss:SS in parti
+                const seconds = parseInt(timeParts[0]) * 60 + parseInt(timeParts[1]); // Converte minuti e secondi in soli secondi
+                const centiseconds = timeParts[2]; // Estrae i centesimi di secondo
+                const lapTimeDecimal = `${seconds},${centiseconds}`; // Combina secondi e centesimi nel formato desiderato
+                csvContent += `${lapTimeDecimal}\n`; // Aggiunge il tempo convertito al contenuto CSV
+            });
+            const encodedUri = encodeURI(`data:text/csv;charset=utf-8,${csvContent}`); // Codifica il contenuto CSV in un URI
+            const link = document.createElement("a"); // Crea un elemento link per il download
+            link.setAttribute("href", encodedUri); // Imposta l'URI come destinazione del link
+            link.setAttribute("download", "snapfit_laps_only.csv"); // Specifica il nome del file da scaricare
+            document.body.appendChild(link); // Aggiunge il link al DOM
+            link.click(); // Simula un clic sul link per avviare il download
+        }
+
+        // Funzione per formattare il tempo nel formato mm:ss:SS
+        function formatTime(timeInMs) {
+            const minutes = String(Math.floor(timeInMs / 60000)).padStart(2, '0'); // Calcola i minuti e li formatta a due cifre
+            const seconds = String(Math.floor((timeInMs % 60000) / 1000)).padStart(2, '0'); // Calcola i secondi e li formatta a due cifre
+            const centiseconds = String(Math.floor((timeInMs % 1000) / 10)).padStart(2, '0'); // Calcola i centesimi di secondo e li formatta a due cifre
+            return `${minutes}:${seconds}:${centiseconds}`; // Combina il tutto nel formato mm:ss:SS
+        }
+    </script>
+</body>
+</html>
+
